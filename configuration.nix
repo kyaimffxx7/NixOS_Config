@@ -46,11 +46,11 @@
 
   # Enable Flakes
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
-  # Enable Cachix
-  nix.settings = {
-    substituters = ["https://hyprland.cachix.org"];
-    trusted-public-keys = ["hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="];
-  };
+  # Enable hyprland Cachix
+  # nix.settings = {
+  #   substituters = ["https://hyprland.cachix.org"];
+  #   trusted-public-keys = ["hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="];
+  # };
 
   # Insecure Packages Setting
   nixpkgs.config.permittedInsecurePackages = [
@@ -66,6 +66,7 @@
   # networking.proxy.default = "http://user:password@proxy:port/";
   # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
 
+  services.upower.enable = true;
   # Enable networking
   networking.networkmanager.enable = true;
   
@@ -77,7 +78,7 @@
   nix.optimise.automatic = true;
 
   # Set your time zone.
-  time.timeZone = "Asia/Hong_Kong";
+  time.timeZone = "Asia/Shanghai";
 
   # Select internationalisation properties.
   i18n.defaultLocale = "en_HK.UTF-8";
@@ -88,16 +89,20 @@
     enable = true;
     fcitx5.waylandFrontend = true;
     fcitx5.addons = with pkgs; [
-      fcitx5-configtool
-      fcitx5-chinese-addons
-      fcitx5-gtk
+      qt6Packages.fcitx5-configtool
+      qt6Packages.fcitx5-chinese-addons
+      qt6Packages.fcitx5-qt
     ];
   };
 
   # Fonts setting
   fonts.enableDefaultPackages = true;
-  fonts.packages = [
-    pkgs.nerd-fonts.jetbrains-mono
+  fonts.packages = with pkgs; [
+    nerd-fonts.jetbrains-mono
+    maple-mono.truetype
+    maple-mono.NF-unhinted
+    maple-mono.NF-CN-unhinted
+    
   ];
   
   # For AMDGPU
@@ -108,14 +113,21 @@
   services.displayManager.sddm.enable = true;
   services.displayManager.sddm.wayland.enable = true;
   services.desktopManager.plasma6.enable = true;
+  # Ly
+  # services.displayManager.ly.enable = true;
 
   # # Enable hyprland
   # programs.hyprland = {
   #   enable = true;
+  #   xwayland.enable = true;
   #   package = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland;
   #   # make sure to also set the portal package, so that they are in sync
   #   portalPackage = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
   # };
+  xdg.portal = {
+    enable = true;
+    extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+  };
 
 
   # Configure keymap in X11
@@ -152,13 +164,43 @@
   #############################
   ## Zsh 
   programs.zsh = {
-    enable = true;
-    autosuggestions.enable = true;
-    enableCompletion = true;
-    syntaxHighlighting.enable = true;
+    enable = false;
+    autosuggestions.enable = false;
+    enableCompletion = false;
+    syntaxHighlighting.enable = false;
     shellAliases = {
       ll = "ls -alh";
     };
+  };
+
+  ## fish + starship
+  programs.fish = {
+    enable = true;
+  };
+  programs.starship = {
+    enable = true;
+    # Configuration written to ~/.config/starship.toml
+    settings = {
+      # add_newline = false;
+
+      # character = {
+      #   success_symbol = "[➜](bold green)";
+      #   error_symbol = "[➜](bold red)";
+      # };
+
+      # package.disabled = true;
+    };
+  };
+
+  programs.git = {
+    enable = true;
+    config = {
+      user = {
+        name = "kyaimffxx7";
+        email = "mask2live@gmail.com";
+      };
+    };
+    lfs.enable = true;
   };
 
   ### kdeconnect ###
@@ -168,20 +210,20 @@
   users.users.hisoka = {
     isNormalUser = true;
     description = "hisoka";
-    shell = pkgs.zsh;
+    shell = pkgs.fish;
     extraGroups = [ "networkmanager" "wheel" "libvirtd" "kvm" "disk" "input" "docker" ]; # if enable docker, add "docker"
     packages = with pkgs; [
-      firefox
+      chromium
     ];
   };
 
   # home-manager setup
-  home-manager = {
-    extraSpecialArgs = { inherit inputs; };
-    users = {
-      "hisoka" = import ./home.nix;
-    };
-  };
+  # home-manager = {
+  #   extraSpecialArgs = { inherit inputs; };
+  #   users = {
+  #     "hisoka" = import ./home.nix;
+  #   };
+  # };
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
@@ -210,25 +252,21 @@
   	  package = pkgs.qemu_kvm;
   	  runAsRoot = true;
   	  swtpm.enable = true;
-  	  ovmf = {
-  	    enable = true;
-  	    packages = [(pkgs.OVMF.override {
-  	      secureBoot = true;
-  	      tpmSupport = true;
-  	    }).fd];
-  	  };
   	};
   };
   programs.virt-manager.enable = true;
 
   
-  # Flatpak
-  services.flatpak.enable = true;
-  # Emacs
+  ## Flatpak
+  # services.flatpak.enable = true;
+  ## Emacs
   services.emacs.enable = true;
-  # Dae
+  ## Dae
   # services.dae.enable = true;
   # services.dae.configFile = "/usr/local/dae/config.dae";
+  ## V2raya
+  # services.v2raya.enable = true;
+  # services.v2ray.enable = true;
 
   #########################
   # Packages Installation #
@@ -236,201 +274,35 @@
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
-    ############################
-    # Bianry Environment Start #
-    ############################
-    # (buildFHSUserEnv {
-    #   name = "fhs";
-    #   targetPkgs = pkgs: with pkgs; [
-    #    # Basic system libraries
-    #    glibc
-    #    gcc-unwrapped
-    #    zlib
-    #    glib
-
-	# NSS libraries
-    #	nss
-    #	nspr
-
-	# D-bus library
-    #	dbus
-
-	# ATK libraries
-    #	at-spi2-atk
-    #	atk
-
-	# CUPS library
-    #	cups
-
-	# DRM library
-    #	libdrm
-
-	# GTK3 library
-    #	gtk3
-
-	# Audio libraries
-    #    alsa-lib
-    #    pulseaudio
-
-	# Add Kerberos libraries
-    #    krb5
-    #    libkrb5
-
-	# Qt and dependencies
-    #    qt5.full
-    #    qt5.qtwayland
-    #    libsForQt5.qt5.qtbase
-    #    libsForQt5.qt5.qtwayland
-
-        # Common dependencies
-    #    openssl
-    #    libxml2
-    #    libxslt
-    #	expat
-    #	libsecret
-    #	libxkbcommon
-
-        # Graphics libraries
-    #    xorg.libX11
-    #    xorg.libXcursor
-    #    xorg.libXrandr
-    #    xorg.libXi
-    #	xorg.libXcomposite
-    #    xorg.libXdamage
-    #    xorg.libXext
-    #    xorg.libXfixes
-    #    xorg.libXrender
-    #    xorg.libXtst
-    #	xorg.xcbutilwm
-    #    xorg.xcbutilimage
-    #    xorg.xcbutilkeysyms
-    #    xorg.xcbutilrenderutil
-    #    wayland
-        
-    #	mesa
-    #	mesa.drivers
-    #    libGL
-    #	libGLU
-
-	# XCB library
-    #	xorg.libxcb
-
-        # Additional libraries that are often needed
-    #    ncurses5
-    #    stdenv.cc.cc.lib
-    #	pango
-    #	cairo
-    #	gdk-pixbuf
-
-        # Add any other libraries your specific binary might need
-    #   ];
-      # multiPkgs = pkgs: with pkgs; [ 
-      #   # Packages that need to be available for both 32-bit and 64-bit
-      #   zlib
-      # 	nss
-	# dbus
-    # 	at-spi2-atk
-    # 	atk
-    # 	cups
-    # 	libdrm
-    # 	gtk3
-    # 	xorg.libXcomposite
-    # 	xorg.libxcb
-    #     alsa-lib
-    # 	krb5
-    # 	libkrb5
-    # 	qt5.full
-    #     qt5.qtwayland
-    #     libsForQt5.qt5.qtbase
-    #     libsForQt5.qt5.qtwayland
-    #     wayland
-    #   ];
-    #   profile = ''
-    #     export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath [
-    #       pkgs.qt5.full
-    #       pkgs.qt5.qtwayland
-    #       pkgs.libsForQt5.qt5.qtbase
-    #       pkgs.libsForQt5.qt5.qtwayland
-    #       pkgs.xorg.libxcb
-    #       pkgs.xorg.xcbutilwm
-    #       pkgs.xorg.xcbutilimage
-    #       pkgs.xorg.xcbutilkeysyms
-    #       pkgs.xorg.xcbutilrenderutil
-    #       pkgs.wayland
-    #       pkgs.libGL
-    #       pkgs.libGLU
-    #       pkgs.mesa
-    #       pkgs.mesa.drivers
-    #       pkgs.glibc
-    #       pkgs.nss
-    #       pkgs.nspr
-    #       pkgs.dbus
-    #       pkgs.at-spi2-atk
-    #       pkgs.atk
-    #       pkgs.cups
-    #       pkgs.libdrm
-    #       pkgs.gtk3
-    #       pkgs.xorg.libX11
-    #       pkgs.xorg.libXcursor
-    #       pkgs.xorg.libXrandr
-    #       pkgs.xorg.libXi
-    #       pkgs.xorg.libXcomposite
-    #       pkgs.xorg.libXdamage
-    #       pkgs.xorg.libXext
-    #       pkgs.xorg.libXfixes
-    #       pkgs.xorg.libXrender
-    #       pkgs.xorg.libXtst
-    #       pkgs.mesa
-    #       pkgs.libGL
-    #       pkgs.alsa-lib
-    #       pkgs.pulseaudio
-    #       pkgs.ncurses5
-    #       pkgs.stdenv.cc.cc.lib
-    #       pkgs.pango
-    #       pkgs.cairo
-    #       pkgs.gdk-pixbuf
-    #       pkgs.krb5
-    #       pkgs.libkrb5
-    #       pkgs.sqlite
-    #       pkgs.expat
-    #       pkgs.libsecret
-    #       pkgs.libxkbcommon
-    # 	 # Add other necessary libraries here
-    #     ]}:$LD_LIBRARY_PATH
-	
-    # 	export QT_PLUGIN_PATH=${pkgs.qt5.qtbase.outPath}/lib/qt-${pkgs.qt5.qtbase.version}/plugins
-    #     export QT_QPA_PLATFORM_PLUGIN_PATH=${pkgs.qt5.qtbase.outPath}/lib/qt-${pkgs.qt5.qtbase.version}/plugins/platforms
-    #     export XDG_DATA_DIRS=$XDG_DATA_DIRS:${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}
-    #     export QT_QPA_PLATFORM=xcb
-    #   '';
-    #   runScript = "bash";
-    # })
-    ##########################
-    # Binary Environment End #
-    ##########################
-
     ############
     # Terminal #
     ############
     termius
-    foot
+    ghostty
 
     ###########
     # Editors #
     ###########
-    neovim
     # Emacs
     emacs
     ripgrep
     coreutils
     fd
     clang
-
-    vscode.fhs
+    
+    # IDEs
+    zed-editor
     helix
+    #andrd-studio
+    jetbrains-toolbox
 
     # Office
     libreoffice-still
+
+    # Note & Reader
+    anytype
+    appflowy
+    calibre
 
     # Internet tools
     wget
@@ -439,23 +311,49 @@
     dnsmasq
     ebtables
 
+    # browser
+    brave
+    tor-browser
+
+    # Video & Picture Editor
+    gimp
+    krita
+
+
     # File tool
     kdePackages.filelight
-    # kdePackages.dolphin
     
     # Zsh plugins
-    zsh-autosuggestions
-    zsh-syntax-highlighting
-    zsh-completions
+    # zsh-autosuggestions
+    # zsh-syntax-highlighting
+    # zsh-completions
+    #
+    starship
 
     # Compilers & Interpreter
     gcc
     gnumake
-    nodejs_22
 
-    ## Tools
-    # # hyprland utilities
+    #janet
+    #jpm
+
+    # hyprland utilities
     # wofi
+    # waybar
+    # mako
+    # libnotify
+    # swww
+    # networkmanagerapplet
+    # grim
+    # slupr
+    # wl-clipboard
+    # wlogout
+    # hypridle
+    # hyprlock
+    # pavucontrol
+    # blueman
+
+    # tools
     fastfetch
     tree
     file
@@ -472,8 +370,14 @@
     libtool
     emacsPackages.nixfmt
     # Python3
-    python313
-    pyright
+    # python313
+    #
+    # # LSP
+    # ruff
+    # prettier
+    # rust-analyzer
+    rustup
+    nodejs_24
 
     # Video tools
     kdePackages.kdenlive
@@ -496,12 +400,23 @@
     feishu
 
     # NixOS home-manager
-    home-manager
+    # home-manager
+
+    # sddm theme
+    sddm-astronaut
 
   ];
 
   environment.variables = {
   	
+  };
+
+  environment.sessionVariables = {
+    # cursor visible settings
+    WLR_NO_HARDWARE_CURSORS = "1";
+
+    # electron apps in wayland
+    NIXOS_OZONE_WL = "1";    
   };
 
   # Some programs need SUID wrappers, can be configured further or are

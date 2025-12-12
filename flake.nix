@@ -22,19 +22,19 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
     # Hyprland WM 
-    hyprland.url = "github:hyprwm/Hyprland";
+    # hyprland.url = "github:hyprwm/Hyprland";
 
     # Home-manager Setting
-    home-manager = {
-      url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # home-manager = {
+    #   url = "github:nix-community/home-manager";
+    #   inputs.nixpkgs.follows = "nixpkgs";
+    # };
 
   };
 
 
 
-  outputs = { self, nixpkgs, home-manager, ... }@inputs: # 
+  outputs = { self, nixpkgs, ... }@inputs: # 
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
@@ -49,12 +49,12 @@
             ./configuration.nix
 
 	          # home-manager modules
-	          home-manager.nixosModules.home-manager
-	          {
-              home-manager.useGlobalPkgs = true;
-	            home-manager.useUserPackages = true;
-	            home-manager.users.hisoka = import ./home.nix;
-	          }
+	          # home-manager.nixosModules.home-manager
+	          # {
+           #    home-manager.useGlobalPkgs = true;
+	          #   home-manager.useUserPackages = true;
+	          #   home-manager.users.hisoka = import ./home.nix;
+	          # }
 
 
             # Substituters setup
